@@ -1,5 +1,9 @@
-def create_tenant(name, plan, users):
+import json
+
+
+def create_tenant(id, name, plan, users):
     tenant = {
+        "id": id,
         "name": name,
         "plan": plan,
         "users": users
@@ -7,120 +11,50 @@ def create_tenant(name, plan, users):
     return tenant
 
 
-tenants = []
-
-tenant1 = create_tenant("Aaromale", "pro", 30)
-tenant2 = create_tenant("Netflix", "free", 500)
-
-tenants.append(tenant1)
-tenants.append(tenant2)
-
-for tenant in tenants:
-    print(tenant["name"])
-
-
 def find_tenant(name):
     for tenant in tenants:
         if tenant["name"].lower() == name.lower():
             return tenant
-
     return None
 
 
-result = find_tenant("Netflix")
-
-print(result)
-
-
-search_name = input("enter the tenant name: ")
-result = find_tenant(search_name)
-print(result)
+def save_tenants():
+    with open("tenants.json", "w") as file:
+        json.dump(tenants, file, indent=4)
 
 
-search_name = input("Enter tenant name: ")
-
-result = find_tenant(search_name)
-
-if result:
-    print("Tenant found!")
-    print("Name:", result["name"])
-    print("Plan:", result["plan"])
-    print("Users:", result["users"])
-else:
-    print("Tenant not found.")
+def load_tenants():
+    try:
+        with open("tenants.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
 
 
-new_name = input("Enter new tenant name: ")
-new_plan = input("Enter plan: ")
-new_users = int(input("Enter number of users: "))
-
-new_tenant = create_tenant(new_name, new_plan, new_users)
-
-tenants.append(new_tenant)
-
-search_new_tenant = input("Search for the new tenant: ")
-
-result = find_tenant(search_new_tenant)
-
-if result:
-    print("Tenant found!")
-    print("Name:", result["name"])
-    print("Plan:", result["plan"])
-    print("Users:", result["users"])
-else:
-    print("Tenant not found.")
-
-print("Tenant added successfully!")
-print(new_tenant)
+tenants = load_tenants()
 
 
-print("\nTenant Management System")
-print("1. View all tenants")
-print("2. Find a tenant")
-print("3. Add a tenant")
-print("4. Exit")
+def assign_existing_ids(tenants):
+    next_id = 180201
 
-choice = input("Choose an option: ")
-
-if choice == "1":
     for tenant in tenants:
-        print(tenant)
+        if "id" not in tenant:
+            tenant["id"] = next_id
+            next_id += 1
 
-elif choice == "2":
-    search_name = input("Enter tenant name: ")
-    result = find_tenant(search_name)
+    return tenants
 
-    if result:
-        print("Tenant found!")
-        print("Name:", result["name"])
-        print("Plan:", result["plan"])
-        print("Users:", result["users"])
-    else:
-        print("Tenant not found.")
 
-elif choice == "3":
-    new_name = input("Enter new tenant name: ")
-    new_plan = input("Enter plan: ")
-    new_users = int(input("Enter number of users: "))
-
-    new_tenant = create_tenant(new_name, new_plan, new_users)
-    tenants.append(new_tenant)
-
-    print("Tenant added successfully!")
-    print(new_tenant)
-
-elif choice == "4":
-    print("Goodbye!")
-
-else:
-    print("Invalid option.")
+print("LOADED TENANTS:", tenants)
 
 while True:
     print("\nTenant Management System")
     print("1. View all tenants")
     print("2. Find a tenant")
     print("3. Add a tenant")
-    print("4. Exit")
+    print("4. Edit a tenant")
+    print("5. Delete a tenant")
+    print("6. Exit")
 
     choice = input("Choose an option: ")
 
@@ -134,6 +68,7 @@ while True:
 
         if result:
             print("Tenant found!")
+            print("ID: ", tenant["id"])
             print("Name:", result["name"])
             print("Plan:", result["plan"])
             print("Users:", result["users"])
@@ -141,16 +76,77 @@ while True:
             print("Tenant not found.")
 
     elif choice == "3":
+        new_id = input("enter the id: ")
         new_name = input("Enter new tenant name: ")
         new_plan = input("Enter plan: ")
         new_users = int(input("Enter number of users: "))
 
-        new_tenant = create_tenant(new_name, new_plan, new_users)
+        new_tenant = create_tenant(new_id, new_name, new_plan, new_users)
         tenants.append(new_tenant)
+        save_tenants()
 
         print("Tenant added successfully!")
 
     elif choice == "4":
+        name = input("Enter tenant name to edit: ")
+
+        tenant = find_tenant(name)
+
+        if tenant:
+            print("Tenant found!")
+            print(tenant)
+
+            print("\n What do you want to edit?")
+            print("1. Name")
+            print("2. Plan")
+            print("3. Users")
+
+            edit_choice = input("Choose an option: ")
+
+            if edit_choice == "1":
+                new_name = input("Enter new tenant name: ")
+                tenant["name"] = new_name
+                print("Name updated successfully!")
+
+            elif edit_choice == "2":
+                new_plan = input("Enter new plan: ")
+                tenant["plan"] = new_plan
+                print("Plan updated successfully!")
+
+            elif edit_choice == "3":
+                new_users = int(input("Enter new number of users: "))
+                tenant["users"] = new_users
+                print("Users updated successfully!")
+
+            else:
+                print("Invalid edit option.")
+
+        else:
+            print("Tenant not found.")
+
+    elif choice == "5":
+        name = input("Enter tenant name to delete: ")
+
+        tenant = find_tenant(name)
+
+        if tenant:
+            print("Tenant found!")
+            print(tenant)
+
+            confirm = input(
+                "Are you sure you want to delete this tenant? (yes/no): ")
+
+            if confirm.lower() == "yes":
+                tenants.remove(tenant)
+                save_tenants()
+                print("Tenant deleted successfully!")
+            else:
+                print("Deletion cancelled.")
+
+        else:
+            print("Tenant not found.")
+
+    elif choice == "6":
         print("Goodbye!")
         break
 
